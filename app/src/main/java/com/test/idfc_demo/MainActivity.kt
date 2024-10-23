@@ -13,7 +13,9 @@ import android.location.Location
 import android.location.LocationManager
 import android.os.Build
 import android.os.Bundle
+import android.os.CountDownTimer
 import android.util.Log
+import android.view.View
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
@@ -22,6 +24,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.common.api.GoogleApiClient
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
@@ -34,6 +37,7 @@ import com.test.idfc_demo.databinding.ActivityMainBinding
 
 private const val TAG = "==>>MainActivity"
 class MainActivity : AppCompatActivity(),com.google.android.gms.location.LocationListener  {
+    private lateinit var latLongAdapter: LatLanAdapter
     private lateinit var locationCallback: LocationCallback
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val REQUEST_LOCATION_CODE=1111
@@ -43,17 +47,34 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
     private val UPDATE_INTERVAL = (2 * 1000).toLong()  /* 10 secs */
     private val FASTEST_INTERVAL: Long = 2000 /* 2 sec */
     private var viewbinding :ActivityMainBinding?=null
-
+private var list:MutableList<LatLanItems> = mutableListOf()
+    private lateinit var dbHelper: DataBaseHelper
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         viewbinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewbinding?.root)
+        dbHelper = DataBaseHelper(this)
+
 
         viewbinding?.apply {
             gpsLiveDataBTN?.setOnClickListener {
+
                 checkPermissionIDFC()
+                startCountdownTimer()
+                list = dbHelper.getAllData()
+                latLongAdapter.updateLatLong(list)
+                if (list.isEmpty()) {
+                    recyclerView.visibility= View.GONE
+                    emptyImage.visibility =View.VISIBLE
+                }else{
+                    recyclerView.visibility= View.VISIBLE
+                    emptyImage.visibility =View.GONE
+                }
             }
+           latLongAdapter = LatLanAdapter(list)
+            recyclerView.layoutManager = LinearLayoutManager(this@MainActivity)
+            recyclerView.adapter = latLongAdapter
         }
 
 
@@ -65,8 +86,16 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
             override fun onLocationResult(locationResult: LocationResult) {
                 val location: Location? = locationResult.lastLocation
                 location?.let {
-                  //  updateLocationUI(it)
+
                     Log.d(TAG, "onLocationResult: $it")
+                    list.add(LatLanItems(it.latitude.toString(),it.longitude.toString(),"address not found"))
+
+                    list.forEach {
+                        val insertResult = dbHelper.insertData(it)
+                    }
+
+                   // latLongAdapter.updateLatLong(list)
+
                 }
             }
         }
@@ -74,7 +103,28 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
         // Request Location Updates
         startLocationUpdates()
     }
+    fun startCountdownTimer() {
 
+        val timer = object : CountDownTimer(30000, 1000) {
+
+            override fun onTick(millisUntilFinished: Long) {
+//                Log.d(TAG, "onTick: $millisUntilFinished")
+            }
+
+            override fun onFinish() {
+
+                list.clear()
+                dbHelper.deleteAllData()
+                latLongAdapter.updateLatLong(list)
+                viewbinding?.apply { recyclerView.visibility= View.GONE
+                emptyImage.visibility =View.VISIBLE}
+                Log.d(TAG, "onFinish: "+list)
+            }
+        }
+
+        // Start the countdown timer
+        timer.start()
+    }
     private fun startLocationUpdates() {
         val locationRequest = LocationRequest.Builder(
             Priority.PRIORITY_HIGH_ACCURACY, 10000L
@@ -120,10 +170,7 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
             permissionManifest.add(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
                 permissionManifest.add(Manifest.permission.FOREGROUND_SERVICE_LOCATION)
-
-
             PermissionX.init(this)
-
                 .permissions(permissionManifest)
                 .request { allGranted, grantedList, deniedList ->
                     if (allGranted) {
