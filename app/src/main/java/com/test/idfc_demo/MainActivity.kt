@@ -7,6 +7,7 @@ import android.annotation.SuppressLint
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
@@ -96,14 +97,27 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
 
     override fun onStart() {
         super.onStart()
+     //   startServiceIntent(Intent(this, IDFCLocationServices::class.java))
         mGoogleApiClient?.connect()
     }
+    private fun startServiceIntent(intent: Intent) {
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                this.startForegroundService(intent)
+            } else {
+                this.startService(intent)
+            }
 
+        } catch (e: Exception) {
+            Log.e(TAG, "startServiceIntent: error ${e.message}")
+        }
+    }
     override fun onStop() {
         super.onStop()
         if (mGoogleApiClient!!.isConnected()) {
             mGoogleApiClient!!.disconnect()
         }
+        stopService(Intent(this,IDFCLocationServices::class.java))
     }
     private fun checkPermissionIDFC() {
         val permissionManifest =
@@ -134,6 +148,6 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
     }
 
     override fun onLocationChanged(p0: Location) {
-        Log.d(TAG, "onLocationChanged: ")
+        Log.d(TAG, "onLocationChanged: "+p0)
     }
 }
