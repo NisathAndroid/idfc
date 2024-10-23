@@ -37,6 +37,7 @@ import com.test.idfc_demo.databinding.ActivityMainBinding
 
 private const val TAG = "==>>MainActivity"
 class MainActivity : AppCompatActivity(),com.google.android.gms.location.LocationListener  {
+    private var server: PushLocalServer? = null
     private lateinit var latLongAdapter: LatLanAdapter
     private lateinit var locationCallback: LocationCallback
     private lateinit var fusedLocationClient: FusedLocationProviderClient
@@ -56,10 +57,17 @@ private var list:MutableList<LatLanItems> = mutableListOf()
         setContentView(viewbinding?.root)
         dbHelper = DataBaseHelper(this)
 
+        server = PushLocalServer(this, 8082)
 
         viewbinding?.apply {
             gpsLiveDataBTN?.setOnClickListener {
-
+                try {
+                    server?.start()
+                    Toast.makeText(this@MainActivity, "Server started on port 8080", Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Toast.makeText(this@MainActivity, "Failed to start server", Toast.LENGTH_SHORT).show()
+                }
                 checkPermissionIDFC()
                 startCountdownTimer()
                 list = dbHelper.getAllData()
@@ -161,6 +169,7 @@ private var list:MutableList<LatLanItems> = mutableListOf()
         super.onDestroy()
         // Stop location updates when the activity is destroyed
         fusedLocationClient.removeLocationUpdates(locationCallback)
+        server?.stop()
     }
 
     private fun checkPermissionIDFC() {
