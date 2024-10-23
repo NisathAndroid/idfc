@@ -23,13 +23,19 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.location.FusedLocationProviderClient
+import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
+import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.Priority
 import com.permissionx.guolindev.PermissionX
 import com.test.idfc_demo.databinding.ActivityMainBinding
 
 private const val TAG = "==>>MainActivity"
 class MainActivity : AppCompatActivity(),com.google.android.gms.location.LocationListener  {
+    private lateinit var locationCallback: LocationCallback
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
     private val REQUEST_LOCATION_CODE=1111
     private var mGoogleApiClient: GoogleApiClient? = null
     private var mLocation: Location? = null
@@ -37,88 +43,76 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
     private val UPDATE_INTERVAL = (2 * 1000).toLong()  /* 10 secs */
     private val FASTEST_INTERVAL: Long = 2000 /* 2 sec */
     private var viewbinding :ActivityMainBinding?=null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         viewbinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewbinding?.root)
+
         viewbinding?.apply {
             gpsLiveDataBTN?.setOnClickListener {
                 checkPermissionIDFC()
             }
         }
-        buildGoogleApiClient()
-
-    }
-
-    private fun isLocationEnabled(): Boolean {
-        var locationManager = getSystemService(Context.LOCATION_SERVICE) as LocationManager
-        return locationManager!!.isProviderEnabled(LocationManager.GPS_PROVIDER) || locationManager!!.isProviderEnabled(LocationManager.NETWORK_PROVIDER)
-    }
 
 
-    @SuppressLint("MissingPermission")
-    private fun getLocation() {
-        mLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient!!);
+        // Initialize FusedLocationProviderClient
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
 
-        if (mLocation == null) {
-            startLocationUpdates()
+        // Create Location Callback
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                val location: Location? = locationResult.lastLocation
+                location?.let {
+                  //  updateLocationUI(it)
+                    Log.d(TAG, "onLocationResult: $it")
+                }
+            }
         }
-        if (mLocation != null) {
-            /*tvLatitude.text = mLocation!!.latitude.toString()
-            tvLongitude.text = mLocation!!.longitude.toString()*/
-            Log.d(TAG, "getLocation: ${mLocation!!.latitude.toString()}")
-            //Toast.makeText(this, mLocation!!.latitude.toString(), Toast.LENGTH_SHORT).show()
-        } else {
-            Toast.makeText(this, "Location not Detected", Toast.LENGTH_SHORT).show()
-        }
+
+        // Request Location Updates
+        startLocationUpdates()
     }
 
     private fun startLocationUpdates() {
-        // Create the location request
-        mLocationRequest = LocationRequest.create()
-            .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
-            .setInterval(UPDATE_INTERVAL)
-            .setFastestInterval(FASTEST_INTERVAL)
-        // Request location updates
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+        val locationRequest = LocationRequest.Builder(
+            Priority.PRIORITY_HIGH_ACCURACY, 10000L
+        ).apply {
+            setMinUpdateIntervalMillis(5000L)  // 5 seconds
+            setWaitForAccurateLocation(true)   // Wait for accurate location when required
+        }.build()
+
+        // Check if permission is granted
+        if (ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_FINE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(
+                this, Manifest.permission.ACCESS_COARSE_LOCATION
+            ) != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(
+                this,
+                arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
+                LOCATION_PERMISSION_REQUEST_CODE
+            )
             return
         }
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient!!, mLocationRequest!!, this)
-    }
-    @Synchronized
-    private fun buildGoogleApiClient() {
-        mGoogleApiClient = GoogleApiClient.Builder(this)
-            .addApi(LocationServices.API)
-            .build()
 
-        mGoogleApiClient!!.connect()
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, null)
     }
 
-    override fun onStart() {
-        super.onStart()
-     //   startServiceIntent(Intent(this, IDFCLocationServices::class.java))
-        mGoogleApiClient?.connect()
-    }
-    private fun startServiceIntent(intent: Intent) {
-        try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                this.startForegroundService(intent)
-            } else {
-                this.startService(intent)
-            }
 
-        } catch (e: Exception) {
-            Log.e(TAG, "startServiceIntent: error ${e.message}")
-        }
+
+    companion object {
+        const val LOCATION_PERMISSION_REQUEST_CODE = 1000
     }
-    override fun onStop() {
-        super.onStop()
-        if (mGoogleApiClient!!.isConnected()) {
-            mGoogleApiClient!!.disconnect()
-        }
-        stopService(Intent(this,IDFCLocationServices::class.java))
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Stop location updates when the activity is destroyed
+        fusedLocationClient.removeLocationUpdates(locationCallback)
     }
+
     private fun checkPermissionIDFC() {
         val permissionManifest =
             mutableListOf(ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION)
@@ -135,7 +129,7 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
                     if (allGranted) {
                         Toast.makeText(this, "All permissions are granted", Toast.LENGTH_LONG)
                             .show()
-                        getLocation()
+                        //getLocation()
                     } else {
                         Toast.makeText(
                             this,
@@ -150,4 +144,6 @@ class MainActivity : AppCompatActivity(),com.google.android.gms.location.Locatio
     override fun onLocationChanged(p0: Location) {
         Log.d(TAG, "onLocationChanged: "+p0)
     }
+
+ 
 }
