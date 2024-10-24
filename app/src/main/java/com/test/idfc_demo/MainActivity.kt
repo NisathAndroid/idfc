@@ -4,10 +4,12 @@ import android.Manifest
 import android.Manifest.permission.ACCESS_COARSE_LOCATION
 import android.Manifest.permission.ACCESS_FINE_LOCATION
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.DialogInterface
 import android.content.Intent
+import android.content.IntentSender
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationManager
@@ -26,17 +28,23 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.common.api.GoogleApiClient
+import com.google.android.gms.common.api.ResolvableApiException
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
+import com.google.android.gms.location.LocationSettingsRequest
+import com.google.android.gms.location.LocationSettingsResponse
 import com.google.android.gms.location.Priority
+import com.google.android.gms.location.SettingsClient
+import com.google.android.gms.tasks.Task
 import com.permissionx.guolindev.PermissionX
 import com.test.idfc_demo.databinding.ActivityMainBinding
 
 private const val TAG = "==>>MainActivity"
 class MainActivity : AppCompatActivity(),com.google.android.gms.location.LocationListener  {
+    private val REQUEST_CHECK_SETTINGS: Int=100
     private var server: PushLocalServer? = null
     private lateinit var latLongAdapter: LatLanAdapter
     private lateinit var locationCallback: LocationCallback
@@ -58,6 +66,7 @@ private var list:MutableList<LatLanItems> = mutableListOf()
         dbHelper = DataBaseHelper(this)
 
         server = PushLocalServer(this, 8082)
+        checkPermissionIDFC()
 
         viewbinding?.apply {
             gpsLiveDataBTN?.setOnClickListener {
@@ -68,7 +77,7 @@ private var list:MutableList<LatLanItems> = mutableListOf()
                     e.printStackTrace()
                     Toast.makeText(this@MainActivity, "Failed to start server", Toast.LENGTH_SHORT).show()
                 }
-                checkPermissionIDFC()
+
                 startCountdownTimer()
                 list = dbHelper.getAllData()
                 latLongAdapter.updateLatLong(list)
@@ -172,6 +181,46 @@ private var list:MutableList<LatLanItems> = mutableListOf()
         server?.stop()
     }
 
+
+    fun promptEnableGPS() {
+        val locationRequest = LocationRequest.create().apply {
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+
+        val builder = LocationSettingsRequest.Builder()
+            .addLocationRequest(locationRequest)
+
+        val client: SettingsClient = LocationServices.getSettingsClient(this)
+        val task: Task<LocationSettingsResponse> = client.checkLocationSettings(builder.build())
+
+        task.addOnSuccessListener { response ->
+            // GPS is already enabled, no need to prompt
+        }
+
+        task.addOnFailureListener { exception ->
+            if (exception is ResolvableApiException) {
+                try {
+                    exception.startResolutionForResult(this, REQUEST_CHECK_SETTINGS)
+                } catch (sendEx: IntentSender.SendIntentException) {
+                    // Ignore the error
+                }
+            }
+        }
+    }
+
+    // Handle the result in onActivityResult
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQUEST_CHECK_SETTINGS) {
+            if (resultCode == Activity.RESULT_OK) {
+                // GPS enabled
+                Log.d(TAG, "onActivityResult: "+resultCode)
+            } else {
+                // GPS not enabled
+                Log.d(TAG, "onActivityResult: GPS not enabled "+resultCode)
+            }
+        }
+    }
     private fun checkPermissionIDFC() {
         val permissionManifest =
             mutableListOf(ACCESS_FINE_LOCATION, ACCESS_COARSE_LOCATION)
@@ -186,6 +235,7 @@ private var list:MutableList<LatLanItems> = mutableListOf()
                         Toast.makeText(this, "All permissions are granted", Toast.LENGTH_LONG)
                             .show()
                         //getLocation()
+                        promptEnableGPS()
                     } else {
                         Toast.makeText(
                             this,
