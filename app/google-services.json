@@ -1,0 +1,33 @@
+{
+  "project_info": {
+    "project_number": "621977009993",
+    "firebase_url": "https://seeforme-server-function-default-rtdb.asia-southeast1.firebasedatabase.app",
+    "project_id": "seeforme-server-function",
+    "storage_bucket": "seeforme-server-function.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:621977009993:android:ab4588c650c1203b4fe498",
+        "android_client_info": {
+          "package_name": "com.test.idfc_demo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA65TJ6UtefJgjwUPJ-Yff_s36yVWCm3BY"
+        },
+        {
+          "current_key": "AIzaSyAMdtBrtucI0SnhYxWdlCbMSFfzo3Lm6jo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

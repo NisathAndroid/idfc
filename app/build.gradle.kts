@@ -13,7 +13,6 @@ android {
         targetSdk = 34
         versionCode = 1
         versionName = "1.0"
-
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
@@ -44,10 +43,16 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
+    implementation(platform("com.google.firebase:firebase-bom:33.5.0"))
+    implementation ("com.google.firebase:firebase-messaging")
+    implementation("com.google.android.gms:play-services-cloud-messaging:17.0.0")
     implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation ("com.guolindev.permissionx:permissionx:1.8.1")
     implementation ("org.nanohttpd:nanohttpd:2.3.1")
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
 }
+apply(plugin = "com.google.gms.google-services")

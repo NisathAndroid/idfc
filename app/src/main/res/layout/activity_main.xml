@@ -6,28 +6,83 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity">
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerView"
-        android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:scrollbars="vertical"
-        />
-
-    <Button
-        android:id="@+id/gps_live_data_BTN"
-        android:layout_width="100dp"
-        android:layout_height="wrap_content"
-        android:text="Gps"
-        android:translationZ="90dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-       />
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <Button
+        android:id="@+id/gps_live_data_BTN"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_margin="18dp"
+        android:padding="12dp"
+        android:text="Show GPS"
+        android:translationZ="90dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.542"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.827" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/db_clear_SW"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:padding="12dp"
+        app:switchPadding="8dp"
+        android:text="Data"
+        android:textOff="disabled"
+        android:textOn="Clear"
+        android:textStyle="bold"
+        android:textColor="@color/red"
+        android:textSize="22sp"
+        android:translationZ="90dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.04"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.98" />
+
+    <com.google.android.material.switchmaterial.SwitchMaterial
+        android:id="@+id/show_notification_SW"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="8dp"
+        android:text="notification"
+        android:textColor="@color/blue"
+        android:textOff="disabled"
+        android:textOn="enabled"
+        android:textSize="22sp"
+        android:textStyle="bold"
+        android:translationZ="90dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.95"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.98"
+        app:switchPadding="8dp" />
+
     <ImageView
         android:id="@+id/emptyImage"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="200dp"
         android:src="@drawable/emptylist"
         android:visibility="visible"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 </androidx.constraintlayout.widget.ConstraintLayout>
